@@ -4,6 +4,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Profile\AvatarController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use OpenAI\Laravel\Facades\OpenAI;
+use Laravel\Socialite\Facades\Socialite;
+use App\Models\User;
+use App\Http\Controllers\TicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,3 +43,32 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+
+Route::get('/auth/redirect', function () {
+    return Socialite::driver('github')->redirect();
+})->name('login.github');
+
+
+Route::get('/auth/callback', function () {
+    $user = Socialite::driver('github')->user();
+    // dd($user->email);
+    // dd($user);
+    $user = User::updateOrCreate(['email' => $user->email], [
+        // 'name' => $user->name,
+        'password' => 'password',
+    ]);
+
+    Auth::login($user);
+    return redirect('/dashboard');
+ 
+    // $user->token
+});
+
+Route::middleware('auth')->group(function(){
+    Route::resource('/ticket', TicketController::class);
+
+    // Route::get('/ticket/create', [TicketController::class, 'create'])->name('ticket.create');
+    // Route::post('/ticket/create', [TicketController::class, 'store'])->name('ticket.store');
+});
+
